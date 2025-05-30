@@ -10,10 +10,7 @@ public class Patch : ControllerBase
     [Produces("application/json")]
     public ActionResult Post([FromForm(Name = "osz2")] IFormFile osz2, [FromForm(Name = "patch")] IFormFile patch)
     {
-        if (osz2 == null || patch == null)
-            return this.BadRequest("No file provided");
-
-        PatchDecryptor patcher = new PatchDecryptor();
+        var patcher = new PatchDecryptor();
         using var data = new MemoryStream();
         
         try

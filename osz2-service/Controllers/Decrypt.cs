@@ -14,24 +14,20 @@ public class Decrypt : ControllerBase
     [Produces("application/json")]
     public ActionResult Post([FromForm(Name = "osz2")] IFormFile osz2)
     {
-        if (osz2 == null)
-            return this.BadRequest("No file provided");
-
-        if (osz2.Length >= int.MaxValue)
-            return this.BadRequest("Invalid file size");
-
         try
         {
-            Osz2Package package = new Osz2Package(osz2.OpenReadStream());
+            if (osz2.Length >= int.MaxValue)
+                return this.BadRequest("Invalid file size");
+         
+            var package = new Osz2Package(osz2.OpenReadStream());
+            var files = RemoveUnusedFiles(package.Files);
 
             var beatmaps = package.Files
                 .Where(item => item.Key.EndsWith(".osu"))
                 .ToDictionary(
                     item => item.Key,
-                    item => ParseBeatmap(item.Value).BeatmapInfo
+                    item => new BeatmapModel(item.Value)
                 );
-
-            var files = RemoveUnusedFiles(package.Files);
 
             return this.Ok(new Dictionary<string, object> {
                 { "metadata", package.Metadata },
@@ -45,22 +41,12 @@ public class Decrypt : ControllerBase
         }
     }
 
-    private Beatmap ParseBeatmap(byte[] data)
-    {
-        using var reader = new LineBufferedReader(new MemoryStream(data));
-        var beatmap = Decoder.GetDecoder<Beatmap>(reader).Decode(reader);
-        beatmap.BeatmapInfo.BPM = beatmap.ControlPointInfo.BPMMinimum;
-        beatmap.BeatmapInfo.Length = beatmap.CalculatePlayableLength();
-        beatmap.BeatmapInfo.MaxCombo = beatmap.GetMaxCombo();
-        return beatmap;
-    }
-
     private Dictionary<string, byte[]> RemoveUnusedFiles(Dictionary<string, byte[]> files)
     {
         var validFileExtensions = new HashSet<string> {
             ".osu", ".osz", ".osb", ".osk", ".png", ".mp3", ".jpeg",
-            ".wav", ".png", ".wav", ".ogg", ".jpg", ".wmv", ".flv",
-            ".mp3", ".flac", ".mp4", ".avi", ".ini", ".jpg", ".m4v"
+            ".wav", ".wav", ".ogg", ".jpg", ".wmv", ".flv", ".m4v",
+            ".mp3", ".flac", ".mp4", ".avi", ".ini", ".jpg"
         };
 
         return files
