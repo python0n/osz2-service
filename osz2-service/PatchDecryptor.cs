@@ -122,7 +122,6 @@ public class PatchDecryptor
             newFile.Write(array6, m, Math.Min(num4, array6.Length - m));
     }
     
-    // Token: 0x0600343D RID: 13373 RVA: 0x00151C8C File Offset: 0x0014FE8C
     public void Patch(string oldFile, string newFile, string patchfile, int compression)
     {
         long num;
